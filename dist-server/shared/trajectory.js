@@ -1,31 +1,15 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.createTrajectory = createTrajectory;
-exports.addPoint = addPoint;
-exports.getDuration = getDuration;
-exports.getPointAtTime = getPointAtTime;
-exports.scaleTime = scaleTime;
-exports.scaleSpace = scaleSpace;
-exports.translate = translate;
-exports.rotate = rotate;
-exports.mirrorX = mirrorX;
-exports.mirrorY = mirrorY;
-exports.reverseTime = reverseTime;
-exports.simplify = simplify;
-exports.clone = clone;
-exports.changeSource = changeSource;
-const types_1 = require("./types");
-function createTrajectory(sourceNumber = 1) {
+import { generateId, getSourceColor } from './types';
+export function createTrajectory(sourceNumber = 1) {
     return {
-        id: (0, types_1.generateId)(),
+        id: generateId(),
         sourceNumber,
         points: [],
-        color: (0, types_1.getSourceColor)(sourceNumber),
+        color: getSourceColor(sourceNumber),
         createdAt: Date.now(),
         updatedAt: Date.now(),
     };
 }
-function addPoint(trajectory, x, y, z, t, orientation) {
+export function addPoint(trajectory, x, y, z, t, orientation) {
     const newPoint = { x, y, z, t, orientation };
     return {
         ...trajectory,
@@ -33,12 +17,12 @@ function addPoint(trajectory, x, y, z, t, orientation) {
         updatedAt: Date.now(),
     };
 }
-function getDuration(trajectory) {
+export function getDuration(trajectory) {
     if (trajectory.points.length === 0)
         return 0;
     return trajectory.points[trajectory.points.length - 1].t;
 }
-function getPointAtTime(trajectory, time) {
+export function getPointAtTime(trajectory, time) {
     const { points } = trajectory;
     if (points.length === 0)
         return null;
@@ -65,14 +49,14 @@ function getPointAtTime(trajectory, time) {
         z: p1.z + (p2.z - p1.z) * ratio,
     };
 }
-function scaleTime(trajectory, factor) {
+export function scaleTime(trajectory, factor) {
     return {
         ...trajectory,
         points: trajectory.points.map(p => ({ ...p, t: Math.floor(p.t * factor) })),
         updatedAt: Date.now(),
     };
 }
-function scaleSpace(trajectory, factor) {
+export function scaleSpace(trajectory, factor) {
     return {
         ...trajectory,
         points: trajectory.points.map(p => ({
@@ -84,7 +68,7 @@ function scaleSpace(trajectory, factor) {
         updatedAt: Date.now(),
     };
 }
-function translate(trajectory, dx, dy, dz) {
+export function translate(trajectory, dx, dy, dz) {
     return {
         ...trajectory,
         points: trajectory.points.map(p => ({
@@ -96,7 +80,7 @@ function translate(trajectory, dx, dy, dz) {
         updatedAt: Date.now(),
     };
 }
-function rotate(trajectory, centerX, centerY, angle // in radians
+export function rotate(trajectory, centerX, centerY, angle // in radians
 ) {
     const cos = Math.cos(angle);
     const sin = Math.sin(angle);
@@ -114,21 +98,21 @@ function rotate(trajectory, centerX, centerY, angle // in radians
         updatedAt: Date.now(),
     };
 }
-function mirrorX(trajectory) {
+export function mirrorX(trajectory) {
     return {
         ...trajectory,
         points: trajectory.points.map(p => ({ ...p, y: -p.y })),
         updatedAt: Date.now(),
     };
 }
-function mirrorY(trajectory) {
+export function mirrorY(trajectory) {
     return {
         ...trajectory,
         points: trajectory.points.map(p => ({ ...p, x: -p.x })),
         updatedAt: Date.now(),
     };
 }
-function reverseTime(trajectory) {
+export function reverseTime(trajectory) {
     const duration = getDuration(trajectory);
     const reversed = [...trajectory.points].reverse().map((p, i, arr) => ({
         ...p,
@@ -140,7 +124,7 @@ function reverseTime(trajectory) {
         updatedAt: Date.now(),
     };
 }
-function simplify(trajectory, tolerance) {
+export function simplify(trajectory, tolerance) {
     // Douglas-Peucker simplification algorithm
     const points = trajectory.points;
     if (points.length <= 2)
@@ -193,20 +177,20 @@ function perpendicularDistance(point, lineStart, lineEnd) {
         Math.pow(point.y - projY, 2) +
         Math.pow(point.z - projZ, 2));
 }
-function clone(trajectory) {
+export function clone(trajectory) {
     return {
         ...trajectory,
-        id: (0, types_1.generateId)(),
+        id: generateId(),
         points: trajectory.points.map(p => ({ ...p })),
         createdAt: Date.now(),
         updatedAt: Date.now(),
     };
 }
-function changeSource(trajectory, sourceNumber) {
+export function changeSource(trajectory, sourceNumber) {
     return {
         ...trajectory,
         sourceNumber,
-        color: (0, types_1.getSourceColor)(sourceNumber),
+        color: getSourceColor(sourceNumber),
         updatedAt: Date.now(),
     };
 }

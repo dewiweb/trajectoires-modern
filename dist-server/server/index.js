@@ -1,15 +1,10 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const http_1 = require("http");
-const ws_1 = require("ws");
-const osc_bridge_js_1 = require("./osc-bridge.js");
-const app = (0, express_1.default)();
-const server = (0, http_1.createServer)(app);
-const wss = new ws_1.WebSocketServer({ server, path: '/ws' });
+import express from 'express';
+import { createServer } from 'http';
+import { WebSocketServer, WebSocket } from 'ws';
+import { OSCBridge } from './osc-bridge.js';
+const app = express();
+const server = createServer(app);
+const wss = new WebSocketServer({ server, path: '/ws' });
 // OSC configuration from environment variables or defaults
 let oscConfig = {
     outputIP: process.env.OSC_OUTPUT_IP || '127.0.0.1',
@@ -53,14 +48,14 @@ function applyMapping(sourceNumber, point) {
     return { sourceNumber: mappedSourceNumber, x, y, z };
 }
 // Create OSC bridge
-let oscBridge = new osc_bridge_js_1.OSCBridge(oscConfig);
+let oscBridge = new OSCBridge(oscConfig);
 // Store connected clients
 const clients = new Set();
 // Broadcast to all connected clients
 function broadcast(message) {
     const data = JSON.stringify(message);
     clients.forEach(client => {
-        if (client.readyState === ws_1.WebSocket.OPEN) {
+        if (client.readyState === WebSocket.OPEN) {
             client.send(data);
         }
     });
@@ -113,7 +108,7 @@ function handleMessage(ws, message) {
             oscConfig = { ...oscConfig, ...newConfig };
             // Recreate OSC bridge with new config
             oscBridge.close();
-            oscBridge = new osc_bridge_js_1.OSCBridge(oscConfig);
+            oscBridge = new OSCBridge(oscConfig);
             oscBridge.on('message', (address, args) => {
                 broadcast({
                     type: 'osc:receive',
@@ -155,7 +150,7 @@ function handleMessage(ws, message) {
 }
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-    app.use(express_1.default.static('dist/client'));
+    app.use(express.static('dist/client'));
 }
 // Health check endpoint
 app.get('/health', (_, res) => {
