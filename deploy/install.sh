@@ -3,9 +3,15 @@ set -e
 
 echo "🎯 Déploiement Trajectoires..."
 
-# Create directory
-mkdir -p /opt/trajectoires
-cd /opt/trajectoires
+# Create directory (use sudo if needed)
+INSTALL_DIR="${TRAJECTOIRES_DIR:-/opt/trajectoires}"
+if [ -w "$(dirname "$INSTALL_DIR")" ]; then
+  mkdir -p "$INSTALL_DIR"
+else
+  sudo mkdir -p "$INSTALL_DIR"
+  sudo chown $USER:$USER "$INSTALL_DIR"
+fi
+cd "$INSTALL_DIR"
 
 # Download files from GitHub
 echo "📥 Téléchargement des fichiers..."
