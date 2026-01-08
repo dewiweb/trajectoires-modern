@@ -18,9 +18,13 @@ echo "📥 Téléchargement des fichiers..."
 curl -sL https://raw.githubusercontent.com/dewiweb/trajectoires-modern/main/deploy/Dockerfile -o Dockerfile
 curl -sL https://raw.githubusercontent.com/dewiweb/trajectoires-modern/main/deploy/docker-compose.yml -o docker-compose.yml
 
-# Build and start
+# Build and start (support both docker-compose v1 and docker compose v2)
 echo "🐳 Construction et démarrage du conteneur..."
-docker-compose up -d --build
+if command -v docker-compose &> /dev/null; then
+  docker-compose up -d --build
+else
+  docker compose up -d --build
+fi
 
 echo ""
 echo "✅ Trajectoires déployé!"
