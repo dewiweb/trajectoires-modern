@@ -179,7 +179,15 @@ function handleMessage(ws: WebSocket, message: WSMessage): void {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static('dist/client'));
+  app.use(express.static('dist'));
+  
+  // SPA fallback - serve index.html for all non-API routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/ws') || req.path.startsWith('/health')) {
+      return next();
+    }
+    res.sendFile('index.html', { root: 'dist' });
+  });
 }
 
 // Health check endpoint
