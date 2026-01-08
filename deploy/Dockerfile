@@ -12,22 +12,25 @@ RUN git clone --depth 1 --branch ${GITHUB_REF} https://github.com/${GITHUB_REPO}
 
 RUN npm ci
 
-RUN npm run build && npx tsc -p tsconfig.server.json
+# Build client only
+RUN npm run build
 
-# Production
+# Production - keep tsx for running TypeScript directly
 FROM node:20-alpine
 
 WORKDIR /app
 
 COPY --from=builder /app/package*.json ./
-RUN npm ci --omit=dev
+COPY --from=builder /app/tsconfig*.json ./
+RUN npm ci
 
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/dist-server ./dist-server
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/shared ./shared
 
 EXPOSE 3000
 EXPOSE 9000/udp
 
 ENV NODE_ENV=production
 
-CMD ["node", "dist-server/server/index.js"]
+CMD ["npx", "tsx", "server/index.ts"]
