@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #1a1a2e;
+  color: #ffffff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #16213e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0f3460;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e94560;
+}
+
+/* Prevent text selection during drawing */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Canvas styles */
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, #16213e 0%, #1a1a2e 100%);
+}
+
+.canvas-container canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* Button styles */
+.btn {
+  @apply px-3 py-2 rounded-lg font-medium transition-all duration-200;
+  @apply hover:scale-105 active:scale-95;
+}
+
+.btn-primary {
+  @apply bg-traj-accent text-white hover:bg-opacity-90;
+}
+
+.btn-secondary {
+  @apply bg-traj-primary text-white hover:bg-opacity-90;
+}
+
+.btn-ghost {
+  @apply bg-transparent text-white hover:bg-white/10;
+}
+
+/* Source button styles */
+.source-btn {
+  @apply w-10 h-10 rounded-full font-bold text-sm transition-all duration-200;
+  @apply hover:scale-110 active:scale-95 border-2 border-transparent;
+}
+
+.source-btn.active {
+  @apply border-white scale-110;
+}
+
+/* Slider styles */
+input[type="range"] {
+  @apply w-full h-2 rounded-lg appearance-none cursor-pointer;
+  background: #0f3460;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply appearance-none w-4 h-4 rounded-full cursor-pointer;
+  background: #e94560;
+}
+
+/* Panel styles */
+.panel {
+  @apply bg-traj-surface/90 backdrop-blur-sm rounded-lg p-3 shadow-lg;
+}
+
+/* Animation keyframes */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 20px currentColor;
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
