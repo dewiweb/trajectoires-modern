@@ -1,8 +1,26 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Trajectory, Session, OSCConfig } from '@shared/types';
+import type { Trajectory, Session, OSCConfig, OSCMapping, BoundingBox } from '@shared/types';
 import { createTrajectory, addPoint, clone, changeSource } from '@shared/trajectory';
-import { generateId, getSourceColor } from '@shared/types';
+import { generateId } from '@shared/types';
+
+const defaultBoundingBox: BoundingBox = {
+  enabled: false,
+  minX: -1,
+  maxX: 1,
+  minY: -1,
+  maxY: 1,
+  minZ: 0,
+  maxZ: 2,
+};
+
+const defaultOSCMapping: OSCMapping = {
+  trackOffset: 0,
+  xOffset: 0,
+  yOffset: 0,
+  zOffset: 0,
+  boundingBox: defaultBoundingBox,
+};
 
 interface AppState {
   // Trajectories
@@ -20,6 +38,7 @@ interface AppState {
   isLooping: boolean;
   playbackTime: number;
   multiPlayMode: boolean;
+  playbackSpeed: number;
 
   // UI State
   settingsPanelOpen: boolean;
@@ -31,6 +50,7 @@ interface AppState {
   // Connection
   connected: boolean;
   oscConfig: OSCConfig;
+  oscMapping: OSCMapping;
 
   // Actions - Trajectories
   addTrajectory: (trajectory: Trajectory) => void;
@@ -66,6 +86,7 @@ interface AppState {
   setLooping: (looping: boolean) => void;
   setPlaybackTime: (time: number) => void;
   setMultiPlayMode: (multiPlay: boolean) => void;
+  setPlaybackSpeed: (speed: number) => void;
 
   // Actions - UI
   toggleSettingsPanel: () => void;
@@ -77,11 +98,12 @@ interface AppState {
   // Actions - Connection
   setConnected: (connected: boolean) => void;
   setOSCConfig: (config: Partial<OSCConfig>) => void;
+  setOSCMapping: (mapping: Partial<OSCMapping>) => void;
 }
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set, get) => ({
+    (set, _get) => ({
       // Initial state
       trajectories: [],
       currentTrajectoryIndex: -1,
@@ -95,6 +117,7 @@ export const useAppStore = create<AppState>()(
       isLooping: false,
       playbackTime: 0,
       multiPlayMode: false,
+      playbackSpeed: 1,
 
       settingsPanelOpen: false,
       zSliderVisible: false,
@@ -109,6 +132,7 @@ export const useAppStore = create<AppState>()(
         inputPort: 9000,
         protocol: 'udp',
       },
+      oscMapping: defaultOSCMapping,
 
       // Trajectory actions
       addTrajectory: (trajectory) => set((state) => ({
@@ -267,6 +291,7 @@ export const useAppStore = create<AppState>()(
       setLooping: (looping) => set({ isLooping: looping }),
       setPlaybackTime: (time) => set({ playbackTime: time }),
       setMultiPlayMode: (multiPlay) => set({ multiPlayMode: multiPlay }),
+      setPlaybackSpeed: (speed) => set({ playbackSpeed: Math.max(0.1, Math.min(4, speed)) }),
 
       // UI actions
       toggleSettingsPanel: () => set((state) => ({ settingsPanelOpen: !state.settingsPanelOpen })),
@@ -280,12 +305,22 @@ export const useAppStore = create<AppState>()(
       setOSCConfig: (config) => set((state) => ({
         oscConfig: { ...state.oscConfig, ...config },
       })),
+      setOSCMapping: (mapping) => set((state) => ({
+        oscMapping: {
+          ...state.oscMapping,
+          ...mapping,
+          boundingBox: mapping.boundingBox
+            ? { ...state.oscMapping.boundingBox, ...mapping.boundingBox }
+            : state.oscMapping.boundingBox,
+        },
+      })),
     }),
     {
       name: 'trajectoires-storage',
       partialize: (state) => ({
         sessions: state.sessions,
         oscConfig: state.oscConfig,
+        oscMapping: state.oscMapping,
         speakerDistance: state.speakerDistance,
         isLooping: state.isLooping,
         multiPlayMode: state.multiPlayMode,

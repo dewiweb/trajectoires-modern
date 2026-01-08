@@ -1,0 +1,24 @@
+version: '3.8'
+
+# Standalone docker-compose - builds from GitHub
+# Usage: docker-compose -f docker-compose.github.yml up -d --build
+
+services:
+  trajectoires:
+    build:
+      context: .
+      dockerfile: Dockerfile.github
+      args:
+        GITHUB_REPO: dewiweb/trajectoires-modern
+        GITHUB_REF: main  # or a specific tag like v2.0.0
+    container_name: trajectoires
+    ports:
+      - "3000:3000"
+      - "9000:9000/udp"
+    environment:
+      - NODE_ENV=production
+      - OSC_OUTPUT_IP=${OSC_OUTPUT_IP:-127.0.0.1}
+      - OSC_OUTPUT_PORT=${OSC_OUTPUT_PORT:-4003}
+      - OSC_INPUT_PORT=${OSC_INPUT_PORT:-9000}
+    network_mode: host
+    restart: unless-stopped

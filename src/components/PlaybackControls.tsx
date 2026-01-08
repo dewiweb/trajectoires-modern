@@ -1,4 +1,5 @@
-import { Play, Pause, Square, Repeat, Layers, ZoomIn, ZoomOut } from 'lucide-react';
+import { Play, Pause, Square, Repeat, Layers, ZoomIn, ZoomOut, Gauge } from 'lucide-react';
+import { useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { useTrajectoryPlayer } from '../hooks/useTrajectoryPlayer';
 
@@ -6,8 +7,10 @@ export function PlaybackControls() {
   const {
     isLooping,
     multiPlayMode,
+    playbackSpeed,
     setLooping,
     setMultiPlayMode,
+    setPlaybackSpeed,
     canvasZoom,
     setCanvasZoom,
     zSliderVisible,
@@ -16,7 +19,9 @@ export function PlaybackControls() {
     setCurrentZ,
   } = useAppStore();
 
-  const { play, pause, stop, toggle, isPlaying, playbackTime, duration } = useTrajectoryPlayer();
+  const [speedControlVisible, setSpeedControlVisible] = useState(false);
+
+  const { stop, toggle, isPlaying, playbackTime, duration } = useTrajectoryPlayer();
 
   const formatTime = (ms: number): string => {
     const seconds = Math.floor(ms / 1000);
@@ -89,6 +94,51 @@ export function PlaybackControls() {
         {/* Time display */}
         <div className="text-xs text-center text-gray-400">
           {formatTime(playbackTime)} / {formatTime(duration)}
+        </div>
+
+        {/* Speed control */}
+        <div className="border-t border-white/10 pt-2">
+          <button
+            onClick={() => setSpeedControlVisible(!speedControlVisible)}
+            className={`w-full p-2 rounded text-sm font-medium transition-colors flex items-center justify-center gap-2 touch-manipulation ${
+              speedControlVisible ? 'bg-traj-accent text-white' : 'hover:bg-white/10'
+            }`}
+          >
+            <Gauge size={16} />
+            <span>{playbackSpeed.toFixed(1)}x</span>
+          </button>
+          
+          {speedControlVisible && (
+            <div className="mt-2 space-y-2">
+              {/* Preset speed buttons */}
+              <div className="grid grid-cols-4 gap-1">
+                {[0.25, 0.5, 1, 2].map((speed) => (
+                  <button
+                    key={speed}
+                    onClick={() => setPlaybackSpeed(speed)}
+                    className={`p-2 text-xs rounded transition-colors touch-manipulation ${
+                      Math.abs(playbackSpeed - speed) < 0.05
+                        ? 'bg-traj-accent text-white'
+                        : 'bg-white/5 hover:bg-white/10 active:bg-white/20'
+                    }`}
+                  >
+                    {speed}x
+                  </button>
+                ))}
+              </div>
+              
+              {/* Fine speed slider */}
+              <input
+                type="range"
+                min="0.1"
+                max="4"
+                step="0.1"
+                value={playbackSpeed}
+                onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+                className="w-full h-8 touch-manipulation"
+              />
+            </div>
+          )}
         </div>
       </div>
 

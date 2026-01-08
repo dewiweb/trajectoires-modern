@@ -20,7 +20,7 @@ export function SourceSelector() {
   };
 
   return (
-    <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+    <div className="absolute left-3 top-16 bottom-[340px] flex flex-col gap-2 overflow-y-auto">
       {[1, 2, 3, 4, 5, 6, 7, 8].map((sourceNum) => {
         const isActive = sourceNum === currentSourceNumber;
         const color = SOURCE_COLORS[sourceNum];

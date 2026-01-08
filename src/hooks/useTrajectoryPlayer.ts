@@ -4,8 +4,28 @@ import { useWebSocket } from './useWebSocket';
 import { getPointAtTime, getDuration } from '@shared/trajectory';
 import type { Trajectory } from '@shared/types';
 
+// Create worker inline to avoid bundler issues
+const createTimerWorker = (): Worker => {
+  const workerCode = `
+    let intervalId = null;
+    self.onmessage = (e) => {
+      const { command, interval } = e.data;
+      if (command === 'start') {
+        if (intervalId) clearInterval(intervalId);
+        intervalId = setInterval(() => {
+          self.postMessage({ type: 'tick', time: performance.now() });
+        }, interval || 16);
+      } else if (command === 'stop') {
+        if (intervalId) { clearInterval(intervalId); intervalId = null; }
+      }
+    };
+  `;
+  const blob = new Blob([workerCode], { type: 'application/javascript' });
+  return new Worker(URL.createObjectURL(blob));
+};
+
 export function useTrajectoryPlayer() {
-  const animationRef = useRef<number | null>(null);
+  const workerRef = useRef<Worker | null>(null);
   const startTimeRef = useRef<number>(0);
   const pauseTimeRef = useRef<number>(0);
 
@@ -50,13 +70,17 @@ export function useTrajectoryPlayer() {
     return Math.max(0, ...toPlay.map(getDuration));
   }, [getTrajectoriesToPlay]);
 
-  const tick = useCallback((timestamp: number) => {
-    const elapsed = timestamp - startTimeRef.current;
+  const tick = useCallback(() => {
+    const now = performance.now();
+    // Get current speed from store (allows live updates)
+    const currentSpeed = useAppStore.getState().playbackSpeed;
+    const realElapsed = now - startTimeRef.current;
+    const scaledElapsed = realElapsed * currentSpeed;
     const maxDuration = getMaxDuration();
 
-    if (elapsed >= maxDuration) {
+    if (scaledElapsed >= maxDuration) {
       if (isLooping) {
-        startTimeRef.current = timestamp;
+        startTimeRef.current = now;
         setPlaybackTime(0);
       } else {
         setPlaying(false);
@@ -64,34 +88,32 @@ export function useTrajectoryPlayer() {
         return;
       }
     } else {
-      setPlaybackTime(elapsed);
+      setPlaybackTime(scaledElapsed);
     }
 
     // Stream points for all playing trajectories
     const toPlay = getTrajectoriesToPlay();
     toPlay.forEach((trajectory) => {
-      const point = getPointAtTime(trajectory, elapsed);
+      const point = getPointAtTime(trajectory, scaledElapsed);
       if (point) {
         streamPoint(trajectory.sourceNumber, point);
       }
     });
 
-    if (isPlaying) {
-      animationRef.current = requestAnimationFrame(tick);
-    }
-  }, [isPlaying, isLooping, getMaxDuration, getTrajectoriesToPlay, setPlaying, setPlaybackTime, streamPoint]);
+  }, [isLooping, getMaxDuration, getTrajectoriesToPlay, setPlaying, setPlaybackTime, streamPoint]);
 
   const play = useCallback(() => {
     if (trajectories.length === 0) return;
 
     const maxDuration = getMaxDuration();
+    const currentSpeed = useAppStore.getState().playbackSpeed;
     if (playbackTime >= maxDuration) {
       // Reset to start if at end
       startTimeRef.current = performance.now();
       setPlaybackTime(0);
     } else {
-      // Resume from current position
-      startTimeRef.current = performance.now() - playbackTime;
+      // Resume from current position (account for speed)
+      startTimeRef.current = performance.now() - (playbackTime / currentSpeed);
     }
 
     setPlaying(true);
@@ -112,14 +134,15 @@ export function useTrajectoryPlayer() {
   const seek = useCallback((time: number) => {
     const maxDuration = getMaxDuration();
     const clampedTime = Math.max(0, Math.min(time, maxDuration));
+    const currentSpeed = useAppStore.getState().playbackSpeed;
     
     setPlaybackTime(clampedTime);
     
     if (isPlaying) {
-      startTimeRef.current = performance.now() - clampedTime;
+      startTimeRef.current = performance.now() - (clampedTime / currentSpeed);
     } else {
       pauseTimeRef.current = clampedTime;
-      startTimeRef.current = performance.now() - clampedTime;
+      startTimeRef.current = performance.now() - (clampedTime / currentSpeed);
     }
 
     // Stream current position
@@ -140,19 +163,30 @@ export function useTrajectoryPlayer() {
     }
   }, [isPlaying, play, pause]);
 
-  // Animation loop effect
+  // Web Worker timer - not throttled by Chrome in background
   useEffect(() => {
     if (isPlaying) {
-      animationRef.current = requestAnimationFrame(tick);
+      if (!workerRef.current) {
+        workerRef.current = createTimerWorker();
+      }
+      workerRef.current.onmessage = () => tick();
+      workerRef.current.postMessage({ command: 'start', interval: 16 });
+    } else {
+      workerRef.current?.postMessage({ command: 'stop' });
     }
 
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-        animationRef.current = null;
-      }
+      workerRef.current?.postMessage({ command: 'stop' });
     };
   }, [isPlaying, tick]);
+
+  // Cleanup worker on unmount
+  useEffect(() => {
+    return () => {
+      workerRef.current?.terminate();
+      workerRef.current = null;
+    };
+  }, []);
 
   return {
     play,

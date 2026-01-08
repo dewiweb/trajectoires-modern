@@ -1,0 +1,23 @@
+version: '3.8'
+
+# Standalone deployment - just copy this folder to your server
+# Then run: docker-compose up -d --build
+
+services:
+  trajectoires:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GITHUB_REPO: dewiweb/trajectoires-modern
+        GITHUB_REF: main
+    container_name: trajectoires
+    ports:
+      - "3000:3000"
+      - "9000:9000/udp"
+    environment:
+      - NODE_ENV=production
+      - OSC_OUTPUT_IP=${OSC_OUTPUT_IP:-127.0.0.1}
+      - OSC_OUTPUT_PORT=${OSC_OUTPUT_PORT:-4003}
+    network_mode: host
+    restart: unless-stopped

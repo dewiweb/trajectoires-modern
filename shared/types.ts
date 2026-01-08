@@ -42,11 +42,31 @@ export interface OSCConfig {
   protocol: 'udp' | 'tcp';
 }
 
+// OSC Mapping Configuration for coordinate transformation
+export interface BoundingBox {
+  enabled: boolean;
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  minZ: number;
+  maxZ: number;
+}
+
+export interface OSCMapping {
+  trackOffset: number;      // Added to source number (e.g., 7 to start at track 8)
+  xOffset: number;          // Added to X coordinate
+  yOffset: number;          // Added to Y coordinate
+  zOffset: number;          // Added to Z coordinate
+  boundingBox: BoundingBox; // Constrain coordinates to this area
+}
+
 // WebSocket message types
 export type WSMessageType = 
   | 'osc:send'
   | 'osc:receive'
   | 'osc:config'
+  | 'osc:mapping'
   | 'connection:status'
   | 'trajectory:stream'
   | 'trajectory:play'

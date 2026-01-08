@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  trajectoires:
+    build: .
+    container_name: trajectoires
+    ports:
+      - "3000:3000"      # HTTP/WebSocket
+      - "9000:9000/udp"  # OSC input
+    environment:
+      - NODE_ENV=production
+      - OSC_OUTPUT_IP=${OSC_OUTPUT_IP:-127.0.0.1}
+      - OSC_OUTPUT_PORT=${OSC_OUTPUT_PORT:-4003}
+      - OSC_INPUT_PORT=${OSC_INPUT_PORT:-9000}
+    network_mode: host  # Required for UDP multicast/broadcast OSC
+    restart: unless-stopped
